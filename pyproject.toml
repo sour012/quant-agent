@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qtagent"
+version = "0.1.0"
+description = "五 Agent 协作的量化交易决策系统：技术面 / 新闻情绪 / 宏观贸易 / 风险预算 / 决策归因"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "requests>=2.28",
+    "PyYAML>=6.0",
+    "SQLAlchemy>=2.0",
+    "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+mysql = ["PyMySQL>=1.1"]
+
+[project.scripts]
+qtagent = "qtagent.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

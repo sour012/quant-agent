@@ -1,0 +1,82 @@
+# ================================================================
+# 量化交易 Agent · 全局配置
+# 所有相对路径均相对于项目根目录解析
+# ================================================================
+
+data:
+  provider: eastmoney          # eastmoney | snapshot(离线快照)
+  cache_dir: data/raw
+  start: "2023-01-01"          # 行情/新闻回测起始日
+  end: null                    # null 表示取到最新
+  index_code: "510300"         # 交易标的：沪深300ETF（真实可成交）
+  benchmark_code: "000300"     # 业绩基准：沪深300指数
+  news_pages: 60               # 每次抓取的 7x24 快讯页数（每页 100 条）
+
+db:
+  # 默认 SQLite，直接可跑；切 MySQL 只需改这一行并 pip install PyMySQL
+  url: "sqlite:///data/qtagent.db"
+
+# ---------------- 五个 Agent 的独立参数 ----------------
+agents:
+  collector:
+    max_lag_days: 5            # 行情最新日期落后交易日超过该值则判定数据陈旧
+    max_missing_ratio: 0.02    # 关键字段缺失率上限
+
+  technical:
+    mode: trend               # trend | reversal | dip_in_trend（见 research/factor_ic.py）
+    ma_windows: [5, 20, 60]
+    rsi_period: 14
+    macd: [12, 26, 9]
+    boll_window: 20
+    boll_k: 2.0
+    atr_period: 14
+    volume_window: 20
+
+  sentiment:
+    decay_halflife_days: 2.0   # 新闻情绪按时间衰减的半衰期
+    lookback_days: 5           # 只统计最近 N 天新闻
+    min_news_for_full_conf: 25 # 新闻条数达到该值置信度记满
+    fallback_on_market: true   # 新闻不足时降级为市场内部情绪代理
+
+  macro:
+    # 贸易/宏观数据对权益的传导：出口同比、进口同比、贸易差额同比
+    zscore_window: 12          # 同比数据的滚动 z-score 窗口（月）
+    weight_export: 0.5
+    weight_import: 0.2
+    weight_balance: 0.3
+
+  risk:
+    vol_window: 20
+    vol_target: 0.18           # 目标年化波动
+    max_position: 1.0          # 仓位上限
+    stop_loss_atr: 2.5         # ATR 止损倍数（仅用于风险披露，不影响 T+1 执行）
+    var_confidence: 0.95
+    risk_off_vol_multiple: 1.6 # 波动超过 target*该倍数时强制降仓
+
+  decision:
+    # 加权规则投票权重（可被 tune 脚本覆盖）
+    # 方向投票权重（risk 不在其中：它只提供仓位预算上限）
+    weights:
+      technical: 0.55
+      sentiment: 0.15
+      macro: 0.30
+    buy_threshold: 0.08        # 方向分高于该值 → 开始建仓
+    sell_threshold: -0.20      # 低于该值才清仓（中性区维持仓位，降低换手）
+    rebalance_band: 0.20       # 仓位变动小于该幅度不调仓（降低换手）
+    confirm_days: 2            # 连续 N 天同向才翻转仓位
+    entry_require_trend: true  # 仅在技术面上升趋势中建仓（单边做多前提）
+    exit_on_trend_break: true  # 持仓期间技术面转为下降趋势则清仓
+    full_score: 0.30           # 方向分达到该值即打满风险预算上限
+    memory_window: 20          # 上下文记忆长度（天）
+
+backtest:
+  initial_cash: 1000000
+  commission: 0.0003           # 单边佣金
+  slippage: 0.0005             # 单边滑点
+  risk_free_rate: 0.02
+  benchmark: "000300"
+  lot_size: 100                # ETF 最小交易单位 100 份
+
+output:
+  report_dir: reports
+  figure_dpi: 150
