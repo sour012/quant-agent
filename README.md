@@ -104,6 +104,9 @@ ORDER BY trade_month;
 ## 5. 快速开始
 
 ```bash
+git clone git@github.com:sour012/quant-agent.git   # HTTPS: https://github.com/sour012/quant-agent.git
+cd quant-agent
+
 pip install -r requirements.txt
 
 export PYTHONPATH=src          # Windows: set PYTHONPATH=src
